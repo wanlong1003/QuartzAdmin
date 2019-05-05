@@ -16,10 +16,17 @@ namespace QuartzAdmin.Api.Controllers
     public class SchedulerController : ControllerBase
     {
         private readonly IScheduler _scheduler;
-
-        public SchedulerController(IScheduler scheduler)
+        private readonly ISchedulerFactory _factory;
+        public SchedulerController(IScheduler scheduler, ISchedulerFactory factory)
         {
+            _factory = factory;
             _scheduler = scheduler;
+        }
+
+        [HttpGet]
+        public async Task<IEnumerable<IScheduler>> Gets()
+        {
+           return await _factory.GetAllSchedulers();
         }
 
         [HttpPost]
@@ -30,22 +37,28 @@ namespace QuartzAdmin.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Stop(string name)
+        public async Task<IActionResult> Stop()
         {
             await _scheduler.Shutdown(true);
             return Ok("停止成功");
         }
 
         [HttpGet]
+        public  string Status()
+        {
+           return _scheduler.IsStarted ? "Runing" : "Stop";
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Test()
         {
             var job = JobBuilder.Create<ExampleJob>()
-            .WithIdentity("job_" + DateTime.Now.ToString("yyyyMMddHHmm"))
+            .WithIdentity("job_" + DateTime.Now.ToString("yyyyMMddHHmmss"))
             .RequestRecovery()
             .Build();
 
             var trigger = (ISimpleTrigger)TriggerBuilder.Create()
-                .WithIdentity("triger_"+DateTime.Now.ToString("yyyyMMddHHmm"))
+                .WithIdentity("triger_"+DateTime.Now.ToString("yyyyMMddHHmmss"))
                 .StartAt(DateBuilder.FutureDate(1, IntervalUnit.Second))
                 .WithSimpleSchedule(x => x.WithRepeatCount(20).WithInterval(TimeSpan.FromMilliseconds(3000)))
                 .Build();

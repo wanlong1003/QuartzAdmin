@@ -31,20 +31,25 @@ namespace QuartzAdmin.Api
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
-            services.AddSingleton<IScheduler>(provider =>
-            {
-                NameValueCollection props = new NameValueCollection
-                {
-                    { "quartz.jobStore.type", "Quartz.Impl.AdoJobStore.JobStoreTX,Quartz" },
-                    {"quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.MySQLDelegate"},
-                     { "quartz.jobStore.tablePrefix", "QRTZ_" },
-                    { "quartz.serializer.type", "json" },
+            services.AddScoped<ISchedulerFactory>(provider => {
+                //NameValueCollection props = new NameValueCollection
+                //{
+                //    { "quartz.jobStore.type", "Quartz.Impl.AdoJobStore.JobStoreTX,Quartz" },
+                //    {"quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.MySQLDelegate"},
+                //     { "quartz.jobStore.tablePrefix", "QRTZ_" },
+                //    { "quartz.serializer.type", "json" },
 
-                    { "quartz.jobStore.dataSource", "default" },
-                    { "quartz.dataSource.default.connectionString", Configuration.GetConnectionString("Default")},
-                    { "quartz.dataSource.default.provider","MySql" }
-                };
-                var factory =  new StdSchedulerFactory(props);
+                //    { "quartz.jobStore.dataSource", "default" },
+                //    { "quartz.dataSource.default.connectionString", Configuration.GetConnectionString("Default")},
+                //    { "quartz.dataSource.default.provider","MySql" }
+                //};
+                // return new StdSchedulerFactory(props);
+                return new StdSchedulerFactory();
+            });
+
+            services.AddScoped<IScheduler>(provider =>
+            {
+                var factory = provider.GetService<ISchedulerFactory>();
                 var task = factory.GetScheduler();
                 task.Wait();
                 return task.Result;
@@ -64,7 +69,7 @@ namespace QuartzAdmin.Api
             });
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IScheduler scheduler)
         {
             if (env.IsDevelopment())
             {
@@ -104,17 +109,7 @@ namespace QuartzAdmin.Api
                 options.SwaggerEndpoint($"/swagger/v1/swagger.json", "V1.0");
             });
 
-            var conn = MySqlClientFactory.Instance.CreateConnection();
-            conn.ConnectionString = Configuration.GetConnectionString("Default");
-            try
-            {
-                conn.Open();
-                conn.Close();
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            scheduler.Start();
         }
     }
 }
