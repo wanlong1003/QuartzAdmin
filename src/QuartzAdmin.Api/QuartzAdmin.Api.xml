@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>QuartzAdmin.Api</name>
+    </assembly>
+    <members>
+        <member name="T:QuartzAdmin.Api.Controllers.SchedulerController">
+            <summary>
+            调度器
+            </summary>
+        </member>
+    </members>
+</doc>
